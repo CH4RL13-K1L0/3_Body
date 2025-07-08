@@ -1,6 +1,12 @@
 # 3_Body
 A simple text-based real-time strategy game based around the 3-body problem
 
+Introduction:
+
+This project simulates the generation of 3-body star systems with astrophysically realistic properties. Each star is created using probabilistic mass sampling based on the Salpeter Initial Mass Function and assigned physical characteristics such as temperature, luminosity, spectral type, and luminosity class according to established stellar models. Planets are then generated within the habitable zone of a chosen host star, with parameters including mass, orbital radius, orbital period (calculated via Kepler’s Third Law), and estimated surface temperature based on stellar luminosity and orbital distance.
+
+The system models stellar motion using vector values that represent relative movement toward or away from the host star, allowing for the calculation of relative velocities between stars. This setup provides a framework for simulating the dynamic environment of multi-star systems and their planets, which can be used as a foundation for further development of space exploration, colonization, or astrophysics-based simulations.
+
 At the moment, the game is not playable. The following features are automated at launch.
 
   1. Star Generation:
