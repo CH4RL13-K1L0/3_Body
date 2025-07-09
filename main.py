@@ -7,7 +7,7 @@ luminosity = 0  # Global placeholder for luminosity (unused here)
 
 # Class representing a star with its key physical and spectral properties
 class Star:
-    def __init__(self, name, mass, spectral_type, temperature, vector, luminosity_class, luminosity):
+    def __init__(self, name, mass, spectral_type, temperature, vector, luminosity_class, luminosity, distance):
         self.name = name                  # Star identifier, e.g. "Star-1"
         self.mass = mass                  # Star mass in solar masses
         self.spectral_type = spectral_type  # Spectral classification based on temperature (O, B, A, F, G, K, M)
@@ -15,6 +15,7 @@ class Star:
         self.vector = vector              # Radial velocity component (direction & speed relative to observer/planet)
         self.luminosity_class = luminosity_class  # Luminosity class (main sequence, giant, etc.)
         self.luminosity = luminosity      # Luminosity in solar units
+        self.distance = distance
 
     # String representation to print star info clearly
     def __repr__(self):
@@ -30,7 +31,11 @@ class Planet:
         self.orbital_period = orbital_period  # Orbital period in Earth years
 
     def __repr__(self):
-        return f"<{self.name}: Mass={self.mass:.2f} Earth Masses, Surface temperature={self.surface_temp:.0f}C, Orbital radius={self.orbital_radius:.2f} AU, Orbital period={self.orbital_period:.2f} years."
+        if self.orbital_period >=1:
+            return f"<{self.name}: Mass= {self.mass:.2f} Earth Masses, Surface temperature= {self.surface_temp:.0f}C, Orbital radius= {self.orbital_radius:.2f} AU, Orbital period= {self.orbital_period:.2f} years."
+        else:
+            orbital_period_days = self.orbital_period * 365
+            return f"<{self.name}: Mass= {self.mass:.2f} Earth Masses, Surface temperature= {self.surface_temp:.0f}C, Orbital radius= {self.orbital_radius:.2f} AU, Orbital period= {orbital_period_days:.2f} days."
 
 # Sample stellar mass according to the Salpeter Initial Mass Function (IMF)
 def salpeter_IMF(m_min=0.08, m_max=20.0, alpha=0.95):
@@ -60,6 +65,7 @@ def star_generation(name):
     luminosity /= L_sun  # Normalize to solar luminosity units
 
     vector = random.uniform(-1, 1)  # Random radial velocity component (direction & magnitude)
+    distance = random.uniform(0.5, 5.0)
 
     # Classify star spectral type based on temperature thresholds
     if temperature > 30000:
@@ -100,7 +106,7 @@ def star_generation(name):
         luminosity_class = "Unknown"
 
     # Return constructed Star object
-    return Star(name, mass, spectral_type, temperature, vector, luminosity_class, luminosity)
+    return Star(name, mass, spectral_type, temperature, vector, luminosity_class, luminosity, distance)
 
 # Create a list of 3 stars with unique names
 def create_stars():
@@ -110,6 +116,14 @@ def create_stars():
         stars.append(star)
     return stars
 
+def update_star_positions(star, delta_time):
+    auPerSecond = 4.74e-6
+    velocity = star.vector * auPerSecond
+    star.distance -= velocity * delta_time
+
+def apparentLuminosity(star):
+    return star.luminosity / (star.distance**2)
+
 # Main launch function to generate stars and a planet, then print results
 def launch():
     stars = create_stars()
@@ -118,10 +132,20 @@ def launch():
         print(star)
 
     hostStar = np.random.choice(stars)  # Randomly pick one star as the host star
-    print(f"\nHost star is: {hostStar.name}. It is a {hostStar.spectral_type} star, {hostStar.luminosity_class} class.")
+    print(f"\nThe host star is: {hostStar.name}. It is a {hostStar.spectral_type} star, {hostStar.luminosity_class} class.")
 
     planet = create_planet(hostStar)  # Generate a planet orbiting the host star
-    print(planet)
+    print(f"\nPlanet profile: {planet}")
+
+    gameTicks = 3600
+    numTicks = 24
+
+    for tick in range(numTicks):
+        for star in stars:
+            if star != hostStar:
+                update_star_positions(star, gameTicks)
+                print(f"{star.name} at {star.distance:.2f} AU, Vector={star.vector:.2f}")
+
     return stars, hostStar, planet
 
 # Wrapper to generate a planet for the given host star
@@ -143,7 +167,7 @@ def calculate_surface_temp(luminosity_watts, orbital_radius_AU, albedo=0.3):
 # Generate a planet orbiting the host star within habitable zone limits
 def planet_generation(host_star):
     x = random.choice(['ɑ', 'β', 'γ'])  # Random Greek letter for planet designation
-    name = f"{host_star.name} {x}"
+    name = f"{host_star.name}{x}"
     mass = random.uniform(0.5, 3)  # Planet mass in Earth masses
 
     # Approximate conservative habitable zone boundaries (in AU)
@@ -160,7 +184,7 @@ def planet_generation(host_star):
     L_sun = 3.828e26
     luminosity = host_star.luminosity * L_sun
 
-    surface_temp = calculate_surface_temp(luminosity, orbital_radius)
+    surface_temp = calculate_surface_temp(luminosity, orbital_radius) + 30
 
     # Return planet object with all properties
     return Planet(name, mass, surface_temp, orbital_radius, orbital_period)
